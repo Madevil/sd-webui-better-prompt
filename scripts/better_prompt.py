@@ -13,6 +13,7 @@ from pydantic import BaseModel
 from modules import scripts, script_callbacks, shared
 from modules.paths_internal import extensions_builtin_dir
 
+import importlib
 
 class MyPrompt(BaseModel):
     label: str
@@ -20,7 +21,7 @@ class MyPrompt(BaseModel):
     prompt: str
 
 
-VERSION = "0.4.1"
+VERSION = "0.4.1.1"
 SETTINGS_SECTION = ("better_prompt", "Better Prompt")
 EXTENSION_ROOT = scripts.basedir()
 LOCALIZATION_DIR = Path(EXTENSION_ROOT).joinpath("locales")
@@ -127,21 +128,19 @@ def on_app_started(demo: Optional[gr.Blocks], app: FastAPI) -> None:
         result = []
         match extra_network_type:
             case "lora":
-                sys.path.append(extensions_builtin_dir)
-                from Lora.ui_extra_networks_lora import ExtraNetworksPageLora
-                sys.path.remove(extensions_builtin_dir)
+                ExtraNetworksPageLora = getattr(importlib.import_module("ui_extra_networks_lora"), "ExtraNetworksPageLora")
 
                 lora = ExtraNetworksPageLora()
                 for item in lora.list_items():
                     result.append(
-                        {"name": item["name"], "preview": item["preview"], "search_term": item["search_term"]})
+                        {"name": item["name"], "preview": item["preview"], "search_term": item["search_terms"][0]})
             case "textual-inversion":
                 from modules.ui_extra_networks_textual_inversion import ExtraNetworksPageTextualInversion
 
                 ti = ExtraNetworksPageTextualInversion()
                 for item in ti.list_items():
                     result.append(
-                        {"name": item["name"], "preview": item["preview"], "search_term": item["search_term"]})
+                        {"name": item["name"], "preview": item["preview"], "search_term": item["search_terms"][0]})
         return JSONResponse(content=result)
 
 
